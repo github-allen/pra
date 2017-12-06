@@ -1,0 +1,30 @@
+{
+  "graph": {
+    "name": "WordNet",
+    "relation sets": [
+      {
+        "is kb": true,
+        "relation file": "/Users/lx/Documents/code/workspace/pra/resource/wordnet_edgelist_baseline.tsv"
+      },
+    ]
+  },
+  "split": "final_wordnet_split_with_negatives",
+  "operation": {
+    "features": {
+      "type": "subgraphs",
+      "path finder": {
+        "type": "BfsPathFinder",
+        "number of steps": 2
+      },
+      "feature extractors": [
+        "PraFeatureExtractor",
+        "AnyRelFeatureExtractor"
+      ],
+      "feature size": -1
+    }
+    "learning": {
+      "l1 weight": 0.5,
+      "l2 weight": 0.01
+    }
+  }
+}

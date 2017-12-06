@@ -1,16 +1,13 @@
 package edu.cmu.ml.rtw.pra.models
 
-import edu.cmu.ml.rtw.pra.experiments.Outputter
-import edu.cmu.ml.rtw.pra.experiments.RelationMetadata
+import edu.cmu.ml.rtw.pra.experiments.{Outputter, RelationMetadata}
 import edu.cmu.ml.rtw.pra.data.NodePairInstance
 import edu.cmu.ml.rtw.pra.features.NodePairSubgraphFeatureGenerator
 import edu.cmu.ml.rtw.pra.features.Subgraph
 import edu.cmu.ml.rtw.pra.features.extractors.FeatureExtractor
 import edu.cmu.ml.rtw.pra.graphs.GraphInMemory
-
-import com.mattg.util.FakeFileUtil
-import com.mattg.util.MutableConcurrentDictionary
-
+import com.mattg.util.{FakeFileUtil, ImmutableDictionary, MutableConcurrentDictionary}
+import edu.cmu.ml.rtw.pra.utils.ImmutableConcurrentDictionary
 import org.scalatest._
 import org.json4s._
 
@@ -25,10 +22,12 @@ class LogisticRegressionModelSpec extends FlatSpecLike with Matchers {
     // loaded feature dictionary with the feature generator actually works.
     val fileUtil = new FakeFileUtil
     val dictionary = new MutableConcurrentDictionary
+    println(dictionary.size())
     val modelFile = "/modelFile.tsv"
     val modelFileContents = "feature 1\t0.0\nfeature 2\t-1.0\nfeature 3\t2.0"
     fileUtil.addFileToBeRead(modelFile, modelFileContents)
-    val model = LogisticRegressionModel.loadFromFile(modelFile, dictionary, outputter, fileUtil)
+    val model = LogisticRegressionModel.loadFromFile[NodePairInstance](modelFile, dictionary, outputter, fileUtil)
+
 
     dictionary.hasKey("feature 1") should be(false)
     model.lrWeights.size should be(3)  // index 0 is unused
@@ -53,5 +52,19 @@ class LogisticRegressionModelSpec extends FlatSpecLike with Matchers {
     }
     val row = generator.constructMatrixRow(new NodePairInstance(1, 1, true, graph))
     model.classifyMatrixRow(row.get) should be(1.0 +- 0.001)
+
+
+//    val a = new ImmutableConcurrentDictionary
+//    a.setFromFile("/Users/lx/Downloads/test.txt")
+//    println(a.size())
+//    println(a.getIndex("g5"))
+//    a.writeToFile("/Users/lx/Downloads/test1.txt")
+//
+//    ModelAction.modelInfo.modelBasePath = "/Users/lx/Documents/code/workspace/pra/" + "examples/results_bak/wordNet/final_emnlp2015/wordnet_sfe_bfs_pra_anyrel_subset/"
+//
+//    val tmodel = ModelAction.modelInfo.modelInit("_part_of", model)
+//
+//    println(tmodel.asInstanceOf[LogisticRegressionModel[NodePairInstance]].lrWeights)
+//    println(model.lrWeights)
   }
 }

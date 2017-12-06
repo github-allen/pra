@@ -1,0 +1,7 @@
+{
+  "name":"WordNet",
+  "relation sets":[{
+    "is kb":true,
+    "relation file":"/Users/lx/Documents/code/workspace/pra/resource/wordnet_edgelist_baseline.tsv"
+  }]
+}

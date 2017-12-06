@@ -1,0 +1,10 @@
+{
+  "name":"wordnet_with_negatives",
+  "relation metadata":"WordNet",
+  "graph":"WordNet",
+  "percent training":0.8,
+  "relations":["_part_of"],
+  "negative instances":{
+    "negative to positive ratio":4
+  }
+}

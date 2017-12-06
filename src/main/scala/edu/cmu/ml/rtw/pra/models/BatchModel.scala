@@ -4,13 +4,9 @@ import cc.mallet.types.Alphabet
 import cc.mallet.types.FeatureVector
 import cc.mallet.types.{Instance => MalletInstance}
 import cc.mallet.types.InstanceList
-
 import org.json4s._
 import org.json4s.native.JsonMethods._
-
-import edu.cmu.ml.rtw.pra.data.Dataset
-import edu.cmu.ml.rtw.pra.data.Instance
-import edu.cmu.ml.rtw.pra.data.Split
+import edu.cmu.ml.rtw.pra.data.{Dataset, Instance, Split}
 import edu.cmu.ml.rtw.pra.experiments.Outputter
 import edu.cmu.ml.rtw.pra.features.FeatureMatrix
 import edu.cmu.ml.rtw.pra.features.MatrixRow
@@ -136,6 +132,7 @@ abstract class BatchModel[T <: Instance](
 object BatchModel{
   // The Split object is necessary here to nail down a specific type.
   def create[T <: Instance](params: JValue, split: Split[T], outputter: Outputter): BatchModel[T] = {
+
     val modelType = JsonHelper.extractWithDefault(params, "type", "logistic regression")
     modelType match {
       case "logistic regression" => new LogisticRegressionModel[T](params, outputter)
@@ -143,4 +140,5 @@ object BatchModel{
       case other => throw new IllegalStateException("Unrecognized model type")
     }
   }
+
 }

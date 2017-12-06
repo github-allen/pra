@@ -2,12 +2,12 @@ package edu.cmu.ml.rtw.pra.experiments
 
 import com.mattg.util.FileUtil
 import com.mattg.util.SpecFileReader
-
 import java.io.File
 
-import scala.util.Random
+import edu.cmu.ml.rtw.pra.utils.{ModelAction, ModelRunner}
 
-import org.json4s.{JNothing,JString}
+import scala.util.Random
+import org.json4s.{JNothing, JString}
 
 object ExperimentRunner {
 
@@ -26,6 +26,7 @@ object ExperimentRunner {
       println("Must supply a base directory as the first argument to ExperimentRunner")
       return
     }
+
     val pra_base = fileUtil.addDirectorySeparatorIfNecessary(args(0))
     val filter = args.toList.drop(1)
     runPra(pra_base, filter)
@@ -73,6 +74,7 @@ object ExperimentRunner {
       println(s"Result directory $result_dir already exists. Skipping...")
       return
     }
+    ModelAction.setModelEnv(pra_base, experiment, params, fileUtil)
     new Driver(pra_base, experiment, params, fileUtil).runPipeline()
   }
 }

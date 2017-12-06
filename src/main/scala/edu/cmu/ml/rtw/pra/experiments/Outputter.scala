@@ -99,9 +99,9 @@ class Outputter(params: JValue, praBase: String, methodName: String, fileUtil: F
 
   def outputScores[T <: Instance](
     scores: Seq[(T, Double)],
-    trainingData: Dataset[T]
+    trainingData: Dataset[T],
+    filename: String = baseDir + relation + "/scores.tsv"
   ) {
-    val filename = baseDir + relation + "/scores.tsv"
     trainingData.instances(0) match {
       case nodePairInstance: NodePairInstance =>  {
         outputNodePairScores(

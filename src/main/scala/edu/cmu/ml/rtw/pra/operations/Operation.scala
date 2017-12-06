@@ -1,32 +1,17 @@
 package edu.cmu.ml.rtw.pra.operations
 
-import edu.cmu.ml.rtw.pra.data.Dataset
-import edu.cmu.ml.rtw.pra.data.Instance
-import edu.cmu.ml.rtw.pra.data.Split
-import edu.cmu.ml.rtw.pra.data.NodePairInstance
-import edu.cmu.ml.rtw.pra.data.NodePairSplit
-import edu.cmu.ml.rtw.pra.experiments.Outputter
-import edu.cmu.ml.rtw.pra.experiments.RelationMetadata
-import edu.cmu.ml.rtw.pra.features.FeatureGenerator
-import edu.cmu.ml.rtw.pra.features.FeatureMatrix
-import edu.cmu.ml.rtw.pra.features.MatrixRow
-import edu.cmu.ml.rtw.pra.graphs.Graph
-import edu.cmu.ml.rtw.pra.graphs.PprComputer
-import edu.cmu.ml.rtw.pra.models.BatchModel
-import edu.cmu.ml.rtw.pra.models.LogisticRegressionModel
-import edu.cmu.ml.rtw.pra.models.OnlineModel
-
-import com.mattg.util.Dictionary
-import com.mattg.util.FileUtil
-import com.mattg.util.JsonHelper
-import com.mattg.util.MutableConcurrentDictionary
+import com.mattg.util.{FileUtil, JsonHelper, MutableConcurrentDictionary}
+import edu.cmu.ml.rtw.pra.data.{Instance, NodePairInstance, NodePairSplit, Split}
+import edu.cmu.ml.rtw.pra.experiments.{Outputter, RelationMetadata}
+import edu.cmu.ml.rtw.pra.features.{FeatureGenerator, FeatureMatrix, MatrixRow, SubgraphFeatureGenerator}
+import edu.cmu.ml.rtw.pra.graphs.{Graph, PprComputer}
+import edu.cmu.ml.rtw.pra.models.{BatchModel, LogisticRegressionModel, OnlineModel}
+import edu.cmu.ml.rtw.pra.utils.ModelAction
+import org.json4s.JsonDSL._
+import org.json4s._
 
 import scala.collection.JavaConverters._
 import scala.collection.concurrent
-import scala.collection.mutable
-
-import org.json4s._
-import org.json4s.JsonDSL._
 
 trait Operation[T <: Instance] {
   def runRelation(relation: String)
@@ -38,13 +23,13 @@ object Operation {
   // leaving it without the Option doesn't give me that warning.  So, I'll take the slightly more
   // ugly design instead of the compiler warning.
   def create[T <: Instance](
-    params: JValue,
-    graph: Option[Graph],
-    split: Split[T],
-    relationMetadata: RelationMetadata,
-    outputter: Outputter,
-    fileUtil: FileUtil
-  ): Operation[T] = {
+                             params: JValue,
+                             graph: Option[Graph],
+                             split: Split[T],
+                             relationMetadata: RelationMetadata,
+                             outputter: Outputter,
+                             fileUtil: FileUtil
+                           ): Operation[T] = {
     val operationType = JsonHelper.extractWithDefault(params, "type", "train and test")
     operationType match {
       case "no op" => new NoOp[T]
@@ -64,24 +49,28 @@ object Operation {
       case other => throw new IllegalStateException(s"Unrecognized operation: $other")
     }
   }
+
 }
 
 class NoOp[T <: Instance] extends Operation[T] {
-  override def runRelation(relation: String) { }
+  override def runRelation(relation: String) {}
 }
 
 class TrainAndTest[T <: Instance](
-  params: JValue,
-  graph: Option[Graph],
-  split: Split[T],
-  relationMetadata: RelationMetadata,
-  outputter: Outputter,
-  fileUtil: FileUtil
-) extends Operation[T] {
+                                   params: JValue,
+                                   graph: Option[Graph],
+                                   split: Split[T],
+                                   relationMetadata: RelationMetadata,
+                                   outputter: Outputter,
+                                   fileUtil: FileUtil
+                                 ) extends Operation[T] {
   val paramKeys = Seq("type", "features", "learning")
   JsonHelper.ensureNoExtras(params, "operation", paramKeys)
 
   override def runRelation(relation: String) {
+
+    //load origin model feature and lrweight
+    val featureDict = ModelAction.modelInfo.loadFeatureDict(relation)
 
     // First we get features.
     val generator = FeatureGenerator.create(
@@ -91,6 +80,7 @@ class TrainAndTest[T <: Instance](
       relation,
       relationMetadata,
       outputter,
+      featureDict = featureDict,
       fileUtil = fileUtil
     )
 
@@ -98,10 +88,21 @@ class TrainAndTest[T <: Instance](
     val trainingMatrix = generator.createTrainingMatrix(trainingData)
     outputter.outputFeatureMatrix(true, trainingMatrix, generator.getFeatureNames())
 
+
     // Then we train a model.
     val model = BatchModel.create(params \ "learning", split, outputter)
+
+    ModelAction.modelInfo.modelInit(relation, model)
     val featureNames = generator.getFeatureNames()
     model.train(trainingMatrix, trainingData, featureNames)
+
+    // 保存模型参数
+    if (generator.isInstanceOf[SubgraphFeatureGenerator[T]]) {
+      ModelAction.modelInfo.saveFeatureDict(relation,
+        generator.asInstanceOf[SubgraphFeatureGenerator[T]].featureDict,
+        outputter
+      )
+    }
 
     // Then we test the model.
     val testingData = split.getTestingData(relation, graph)
@@ -113,13 +114,13 @@ class TrainAndTest[T <: Instance](
 }
 
 class HackyHanieOperation(
-  params: JValue,
-  graph: Option[Graph],
-  split: Split[NodePairInstance],
-  relationMetadata: RelationMetadata,
-  outputter: Outputter,
-  fileUtil: FileUtil
-) extends Operation[NodePairInstance] {
+                           params: JValue,
+                           graph: Option[Graph],
+                           split: Split[NodePairInstance],
+                           relationMetadata: RelationMetadata,
+                           outputter: Outputter,
+                           fileUtil: FileUtil
+                         ) extends Operation[NodePairInstance] {
   val paramKeys = Seq("type", "features")
   JsonHelper.ensureNoExtras(params, "operation", paramKeys)
 
@@ -133,10 +134,10 @@ class HackyHanieOperation(
   }
 
   def runRelationWithModel(
-    relation: String,
-    model: LogisticRegressionModel[NodePairInstance],
-    featureDictionary: MutableConcurrentDictionary
-  ) {
+                            relation: String,
+                            model: LogisticRegressionModel[NodePairInstance],
+                            featureDictionary: MutableConcurrentDictionary
+                          ) {
     val generator = FeatureGenerator.create(
       params \ "features",
       graph,
@@ -170,7 +171,7 @@ class HackyHanieOperation(
       sources,
       targets,
       allowedTargets,
-      allowedSources  // yes, these two are flipped on purpose. See comments in PprComputer.
+      allowedSources // yes, these two are flipped on purpose. See comments in PprComputer.
     )
 
     val predictions = testingData.instances.flatMap(instance => {
@@ -231,13 +232,13 @@ class HackyHanieOperation(
 }
 
 class CreateMatrices[T <: Instance](
-  params: JValue,
-  graph: Option[Graph],
-  split: Split[T],
-  relationMetadata: RelationMetadata,
-  outputter: Outputter,
-  fileUtil: FileUtil
-) extends Operation[T] {
+                                     params: JValue,
+                                     graph: Option[Graph],
+                                     split: Split[T],
+                                     relationMetadata: RelationMetadata,
+                                     outputter: Outputter,
+                                     fileUtil: FileUtil
+                                   ) extends Operation[T] {
   val paramKeys = Seq("type", "features", "data")
   val dataOptions = Seq("both", "training", "testing")
   val dataToUse = JsonHelper.extractChoiceWithDefault(params, "data", dataOptions, "both")
@@ -268,13 +269,13 @@ class CreateMatrices[T <: Instance](
 }
 
 class SgdTrainAndTest[T <: Instance](
-  params: JValue,
-  graph: Option[Graph],
-  split: Split[T],
-  relationMetadata: RelationMetadata,
-  outputter: Outputter,
-  fileUtil: FileUtil
-) extends Operation[T] {
+                                      params: JValue,
+                                      graph: Option[Graph],
+                                      split: Split[T],
+                                      relationMetadata: RelationMetadata,
+                                      outputter: Outputter,
+                                      fileUtil: FileUtil
+                                    ) extends Operation[T] {
   val paramKeys = Seq("type", "learning", "features", "cache feature vectors")
   JsonHelper.ensureNoExtras(params, "operation", paramKeys)
 
@@ -312,7 +313,7 @@ class SgdTrainAndTest[T <: Instance](
         }
         matrixRow match {
           case Some(row) => model.updateWeights(row)
-          case None => { }
+          case None => {}
         }
       })
     }
