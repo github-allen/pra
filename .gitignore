@@ -79,4 +79,6 @@ project/plugins/project/
 out
 gen
 .idea/*
-examples/results_bak
+examples/results*
+examples/graphs
+examples/splits
