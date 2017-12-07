@@ -79,6 +79,5 @@ project/plugins/project/
 out
 gen
 .idea/*
-examples/results*
-examples/graphs
-examples/splits
+examples
+*.tgz

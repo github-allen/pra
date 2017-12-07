@@ -78,6 +78,8 @@ class ModelEnv(praBase: String,
 
     val dictPath = newOutputter.baseDir + relation + "/featuredict.tsv"
     dict.writeToFile(dictPath)
+
+    
   }
 
   def loadFeatureDict(relation: String): MutableConcurrentDictionary = {
