@@ -21,7 +21,6 @@ class LexicalizedPathTypeSpec extends FlatSpecLike with Matchers {
   val edgeDict = new MutableConcurrentDictionary()
   edgeDict.getIndex("rel1")
   edgeDict.getIndex("rel2")
-
   val graph = new GraphInMemory(Array[Node](), nodeDict, edgeDict)
   val factory = new LexicalizedPathTypeFactory(JNothing, graph)
 
@@ -76,8 +75,8 @@ class LexicalizedPathTypeSpec extends FlatSpecLike with Matchers {
   "encodeAsHumanReadableStringWithoutNodes" should "look like a normal PRA path" in {
     val pathType1 = new LexicalizedPathType(Array(1, 2), Array(3, 4), Array(true, false), JNothing)
     pathType1.encodeAsHumanReadableStringWithoutNodes(graph) should be("-_rel1-rel2-")
-    val pathType2 = new LexicalizedPathType(Array(1, 2), Array(3), Array(true, false), JNothing)
-    pathType2.encodeAsHumanReadableStringWithoutNodes(graph) should be("-_rel1-rel2-")
+    val pathType2 = new LexicalizedPathType(Array(1, 2), Array(3), Array(true, true), JNothing)
+    pathType2.encodeAsHumanReadableStringWithoutNodes(graph) should be("-_rel1-_rel2-")
   }
 
   "fromString" should "successfully parse an encoded string" in {

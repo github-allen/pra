@@ -12,7 +12,7 @@ import org.json4s.JsonAST.JValue
 
 
 object ModelAction {
-  var modelInfo: ModelEnv = null
+  var modelInfo: ModelEnv = ModelEnv.defaultModelEnv
   var dataInfo: CurrentDataEnv = null
 
 

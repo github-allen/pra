@@ -8,13 +8,11 @@ import edu.cmu.ml.rtw.pra.graphs.Graph
 import edu.cmu.ml.rtw.pra.features.FeatureMatrix
 import edu.cmu.ml.rtw.pra.features.MatrixRow
 import edu.cmu.ml.rtw.pra.features.PathType
-import com.mattg.util.FileUtil
-import com.mattg.util.JsonHelper
+import com.mattg.util.{FileUtil, JsonHelper, MutableConcurrentDictionary}
 
 import scala.collection.JavaConverters._
-
 import org.json4s._
-import org.json4s.native.JsonMethods.{pretty,render,parse}
+import org.json4s.native.JsonMethods.{parse, pretty, render}
 
 /**
  * Handles outputting results and other information from running PRA to the file system.
@@ -28,6 +26,7 @@ class Outputter(params: JValue, praBase: String, methodName: String, fileUtil: F
   // ExperimentRunner.  Specifically, the default check to not re-run experiments will fail.
   val baseDir = JsonHelper.extractWithDefault(params, "outdir", s"${praBase}results/${methodName}/")
   val shouldOutputMatrices = JsonHelper.extractWithDefault(params, "output matrices", false)
+  val shouldOutputIndexMatrices = JsonHelper.extractWithDefault(params, "output index matrices", false)
   val shouldOutputPaths = JsonHelper.extractWithDefault(params, "output paths", false)
   val shouldOutputPathCounts = JsonHelper.extractWithDefault(params, "output path counts", false)
   val shouldOutputPathCountMap = JsonHelper.extractWithDefault(params, "output path count map", false)
@@ -263,6 +262,34 @@ class Outputter(params: JValue, praBase: String, methodName: String, fileUtil: F
           writer.write(featureName + "," + row.values(i))
           if (i < row.columns - 1) {
              writer.write(" -#- ")
+          }
+        }
+        writer.write("\n")
+      }
+      writer.close()
+    }
+  }
+
+
+  def outputFeatureIndexMatrix(isTraining: Boolean, matrix: FeatureMatrix, featureNames: Seq[String], dict: MutableConcurrentDictionary = new MutableConcurrentDictionary()) {
+    if (shouldOutputIndexMatrices) {
+      val trainingStr = if (isTraining) "training_matrix_index.tsv" else "test_matrix_index.tsv"
+      val filename = baseDir + relation + "/" + trainingStr
+      val writer = fileUtil.getFileWriter(filename)
+      for (row <- matrix.getRows().asScala) {
+        val key = row.instance match {
+          case npi: NodePairInstance => {
+            getNode(npi.source, npi.graph) + "," + getNode(npi.target, npi.graph)
+          }
+          case ni: NodeInstance => { getNode(ni.node, ni.graph) }
+        }
+        val positiveStr = if (row.instance.isPositive) "1" else "-1"
+        writer.write(key + "\t" + positiveStr + "\t")
+        for (i <- 0 until row.columns) {
+          val featureName = featureNames(row.featureTypes(i))
+          writer.write(dict.getIndex(featureName) + "," + row.values(i))
+          if (i < row.columns - 1) {
+            writer.write(" -#- ")
           }
         }
         writer.write("\n")

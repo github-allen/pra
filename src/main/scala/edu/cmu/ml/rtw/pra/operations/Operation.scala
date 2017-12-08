@@ -86,7 +86,7 @@ class TrainAndTest[T <: Instance](
 
     val trainingData = split.getTrainingData(relation, graph)
     val trainingMatrix = generator.createTrainingMatrix(trainingData)
-    outputter.outputFeatureMatrix(true, trainingMatrix, generator.getFeatureNames())
+    outputter.outputFeatureIndexMatrix(true, trainingMatrix, generator.getFeatureNames())
 
 
     // Then we train a model.

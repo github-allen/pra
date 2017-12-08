@@ -4,11 +4,11 @@
     "relation sets": [
       {
         "is kb": false,
-        "relation file": "/Users/lx/Downloads/Release/train.txt"
+        "relation file": "/home/mattg/data/freebase/fb15k_train.tsv"
       },
       {
         "is kb": false,
-        "relation file": "/Users/lx/Downloads/Release/valid.txt"
+        "relation file": "/home/mattg/data/freebase/fb15k_valid.tsv"
       }
     ]
   },

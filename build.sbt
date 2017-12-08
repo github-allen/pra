@@ -3,9 +3,9 @@ enablePlugins(PackPlugin)
 
 organization := "edu.cmu.ml.rtw"
 
-name := "pra"
+name := "scopa_pra"
 
-version := "3.4.beta"
+version := "1.0"
 
 scalaVersion := "2.11.7"
 
@@ -42,49 +42,3 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 )
 
-
-// GraphChi leaves some threads running, so we need to call System.exit().  This makes that play
-// nicely while in an sbt console.
-//fork := true
-//
-//connectInput := true
-//
-//cancelable in Global := true
-//
-//testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD")
-//
-//jacoco.settings
-//
-//jacoco.reportFormats in jacoco.Config := Seq(
-//  de.johoop.jacoco4sbt.ScalaHTMLReport(encoding = "utf-8", withBranchCoverage = true))
-//
-//publishMavenStyle := true
-//
-//pomIncludeRepository := { _ => false }
-//
-//publishTo := {
-//  val nexus = "https://oss.sonatype.org/"
-//  if (isSnapshot.value)
-//    Some("snapshots" at nexus + "content/repositories/snapshots")
-//  else
-//    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-//}
-//
-//publishArtifact in Test := false
-//
-//licenses := Seq("GPL-3.0" -> url("http://www.opensource.org/licenses/GPL-3.0"))
-//
-//homepage := Some(url("http://matt-gardner.github.io/pra"))
-//
-//pomExtra := (
-//  <scm>
-//    <url>git@github.com:matt-gardner/pra.git</url>
-//    <connection>scm:git:git@github.com:matt-gardner/pra.git</connection>
-//  </scm>
-//  <developers>
-//    <developer>
-//      <id>matt-gardner</id>
-//      <name>Matt Gardner</name>
-//      <url>http://cs.cmu.edu/~mg1</url>
-//    </developer>
-//  </developers>)

@@ -25,7 +25,7 @@ trait Environment
 class ModelEnv(praBase: String,
                methodName: String,
                params: JValue,
-               fileUtil: FileUtil) extends Environment{
+               fileUtil: FileUtil = new FileUtil) extends Environment{
 
   //读取的均为已经上次构建模型的目录
   val outputter = new Outputter(params \ "output", praBase, methodName, fileUtil)
@@ -78,8 +78,6 @@ class ModelEnv(praBase: String,
 
     val dictPath = newOutputter.baseDir + relation + "/featuredict.tsv"
     dict.writeToFile(dictPath)
-
-    
   }
 
   def loadFeatureDict(relation: String): MutableConcurrentDictionary = {
@@ -97,11 +95,15 @@ class ModelEnv(praBase: String,
   }
 }
 
+object ModelEnv {
+  val defaultModelEnv: ModelEnv = new ModelEnv(".", "fake", JNothing)
+}
 
+//当前环境设置，每次需要load目前的数据和设置relation metadata
 class CurrentDataEnv(praBase: String,
                      methodName: String,
                      params: JValue,
-                     fileUtil: FileUtil
+                     fileUtil: FileUtil = new FileUtil
                     ) extends Environment {
 
   val outputter = new Outputter(params \ "output", praBase, methodName, fileUtil)
@@ -121,6 +123,8 @@ class CurrentDataEnv(praBase: String,
     featureDict = dict,
     fileUtil = fileUtil
   )
+}
 
-
+object CurrentDataEnv{
+  val defaultDataInfo: CurrentDataEnv = new CurrentDataEnv(".", "fake", JNothing)
 }
