@@ -57,6 +57,7 @@ object ExperimentScorer {
       relationMetrics_)
   }
 
+
   def shouldKeepFile(filters: Seq[String])(file: File): Boolean = {
     if (filters.size == 0) {
       true
@@ -66,6 +67,54 @@ object ExperimentScorer {
       }
       false
     }
+  }
+
+
+  def scoreExperiments(pra_base: String) = {
+    val results_dir = pra_base + RESULTS_DIR
+    val experiment_dirs = fileUtil.recursiveListFiles(new File(results_dir),
+      """settings.txt|params.json|log.txt""".r)
+      .map(_.getParentFile).toSet
+
+    var greatest_common_path = experiment_dirs.last.getParentFile
+    var all_in_common = false
+    while (!all_in_common) {
+      all_in_common = true
+      for (experiment_dir <- experiment_dirs) {
+        if (!experiment_dir.getAbsolutePath.startsWith(greatest_common_path.getAbsolutePath)) {
+          all_in_common = false
+        }
+      }
+      if (!all_in_common) {
+        greatest_common_path = greatest_common_path.getParentFile
+      }
+    }
+    val displayNameSplit = greatest_common_path.getAbsolutePath + "/"
+    val savedMetricsFile = results_dir + SAVED_METRICS
+    val savedMetrics = readSavedMetrics(savedMetricsFile)
+    val metrics = EmptyExperimentMetricsWithDefaults
+
+    for (experiment_dir <- experiment_dirs) {
+      val experiment_name = experiment_dir.getAbsolutePath().split(RESULTS_DIR).last
+      val experiment_metrics = computeMetrics(
+        pra_base,
+        experiment_dir.getAbsolutePath(),
+        displayNameSplit,
+        savedMetrics.get(experiment_name),
+        metricComputers_)
+      if (experiment_metrics.size > 0) {
+        metrics(experiment_name) = experiment_metrics
+        savedMetrics(experiment_name) = experiment_metrics
+      }
+    }
+    val finishedMetrics = makeExperimentMetricsImmutable(metrics)
+    displayExperiments(
+      finishedMetrics,
+      displayMetrics_,
+      sortResultsBy_,
+      significanceTests_,
+      relationMetrics_)
+    saveMetrics(makeExperimentMetricsImmutable(savedMetrics), savedMetricsFile)
   }
 
   def scoreExperiments(
