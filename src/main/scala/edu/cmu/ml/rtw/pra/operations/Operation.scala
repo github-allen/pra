@@ -107,7 +107,7 @@ class TrainAndTest[T <: Instance](
     // Then we test the model.
     val testingData = split.getTestingData(relation, graph)
     val testMatrix = generator.createTestMatrix(testingData)
-    outputter.outputFeatureMatrix(false, testMatrix, generator.getFeatureNames())
+    outputter.outputFeatureIndexMatrix(false, testMatrix, generator.getFeatureNames())
     val scores = model.classifyInstances(testMatrix)
     outputter.outputScores(scores, trainingData)
   }
