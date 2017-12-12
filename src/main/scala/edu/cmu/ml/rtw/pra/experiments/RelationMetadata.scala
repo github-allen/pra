@@ -12,31 +12,39 @@ import scala.collection.mutable
 import org.json4s._
 
 class RelationMetadata(
-  params: JValue,
-  praBase: String,
-  outputter: Outputter,
-  fileUtil: FileUtil = new FileUtil
-) {
+                        params: JValue,
+                        praBase: String,
+                        outputter: Outputter,
+                        fileUtil: FileUtil = new FileUtil,
+                        ismetaDir: Boolean = false //直接传目录
+                      ) {
   implicit val formats = DefaultFormats
 
-  val baseDir: String = params match {
-    case JNothing => null
-    case JString(path) if (path.startsWith("/")) => fileUtil.addDirectorySeparatorIfNecessary(path)
-    case JString(name) => s"${praBase}relation_metadata/${name}/"
-    case jval => {
-      jval \ "name" match {
-        case JString(name) => s"${praBase}relation_metadata/${name}/"
-        case _ => {
-          jval \ "directory" match {
-            case JString(dir) => dir
-            case _ => {
-              outputter.warn("Couldn't find a base directory for relation metadata...")
-              null
+  val baseDir: String = if (ismetaDir) praBase
+  else {
+    params match {
+      case JNothing => null
+      case JString(path) if (path.startsWith("/")) => fileUtil.addDirectorySeparatorIfNecessary(path)
+      case JString(name) => s"${praBase}relation_metadata/${name}/"
+      case jval => {
+        jval \ "name" match {
+          case JString(name) => s"${praBase}relation_metadata/${name}/"
+          case _ => {
+            jval \ "directory" match {
+              case JString(dir) => dir
+              case _ => {
+                outputter.warn("Couldn't find a base directory for relation metadata...")
+                null
+              }
             }
           }
         }
       }
     }
+  }
+
+  def this(metaDir: String, outputter: Outputter, fileUtil: FileUtil) = {
+    this(JNothing, metaDir, outputter, fileUtil, true)
   }
 
   val embeddingsFile = JsonHelper.extractWithDefault(params, "embeddings", baseDir + "embeddings.tsv")
@@ -118,15 +126,15 @@ class RelationMetadata(
   }
 
   def getDomainOrRange(
-    relation: String,
-    domainOrRange: Option[Map[String, String]],
-    graph: Option[Graph]
-  ): Option[Set[Int]] = {
+                        relation: String,
+                        domainOrRange: Option[Map[String, String]],
+                        graph: Option[Graph]
+                      ): Option[Set[Int]] = {
     domainOrRange match {
       case Some(mapping) => {
         val category = mapping.get(relation) match {
           case None => throw new IllegalStateException(
-              "You specified a range/domain file, but it doesn't contain an entry for relation " + relation)
+            "You specified a range/domain file, but it doesn't contain an entry for relation " + relation)
           case Some(r) => r
         }
         val fixed = category.replace("/", "_")

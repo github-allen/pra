@@ -19,6 +19,13 @@ class ScopaRunner {
 
   var methodName = "praInfer"
 
+  //TODO use in future
+  def getParamsFromFile(filePath: String, fileUtil: FileUtil = fileUtil) = {
+    val content = fileUtil.readFileContents(filePath)
+
+    parse(content)
+  }
+
   def getParams(filePath: String = s"${BASE_DIR}relation_metadata/WordNet/wordnet_edgelist_baseline.tsv"): JValue = {
     parse(
       s"""{
@@ -31,6 +38,7 @@ class ScopaRunner {
          |      },
          |    ]
          |  },
+         |  "relation metadata": "WordNet",
          |   "split": {
          |    "name": "wordnet_with_negatives",
          |    "relation metadata": "WordNet",
@@ -67,6 +75,7 @@ class ScopaRunner {
     )
   }
 
+
   def initEnv(pra_base: String, result_dir: String, kb_path: String, method_name: String = "praInfer") = {
     BASE_DIR = fileUtil.addDirectorySeparatorIfNecessary(pra_base)
     RESULTS_DIR = fileUtil.addDirectorySeparatorIfNecessary(result_dir)
@@ -97,7 +106,7 @@ object ScopaRunner {
   def main(args: Array[String]): Unit = {
     val runner = new ScopaRunner
 
-    runner.run
-//    runner.score
+//    runner.run
+    runner.score
   }
 }
